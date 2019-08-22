@@ -1,0 +1,1 @@
+Implements a properties file manipulator that copies over a value from an environment variable optionally applying constraints and mappings.
