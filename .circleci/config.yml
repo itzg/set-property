@@ -12,12 +12,12 @@ jobs:
 
       - restore_cache:
           keys:
-            - cache-{{ .Branch }}-{{ checksum "go.sum" }}
+            - cache-{{ checksum "go.sum" }}
 
       - run: go test
 
       - save_cache:
-          key: cache-{{ .Branch }}-{{ checksum "go.sum" }}
+          key: cache-{{ checksum "go.sum" }}
           paths:
             - /go/pkg
 
