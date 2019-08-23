@@ -33,11 +33,12 @@ func (kv *keyValue) UnmarshalText(b []byte) error {
 }
 
 type args struct {
-	Property string     `arg:"-p,required"`
-	EnvVar   string     `arg:"-e,required"`
 	File     string     `arg:"-f,required"`
-	Allowed  []string   `help:"If specified, limits the values that can be passed from ENVVAR"`
+	Property string     `arg:"-p"`
+	EnvVar   string     `arg:"-e"`
+	Allowed  []string   `arg:"-a" help:"If specified, limits the values that can be passed from ENVVAR"`
 	Map      []keyValue `arg:"-m" help:"Defines mappings of a given value into property value to set. Syntax is from=to"`
+	Bulk     string     `help:"The name of a bulk definition JSON file"`
 }
 
 func (args) Version() string {
@@ -50,50 +51,25 @@ func (args) Description() string {
 
 func main() {
 	var args args
-	arg.MustParse(&args)
+	argsParser := arg.MustParse(&args)
 
-	value, exists := os.LookupEnv(args.EnvVar)
-	if !exists {
-		// not set, so quickly get out of here
-		return
-	}
-
-	value = mapValue(args, value)
-
-	if !isAllowed(args, value) {
-		log.Fatalf("Value '%s' from %s is not in allowed list: %v", value, args.EnvVar, args.Allowed)
-	}
-
-	err := setPropertyInFile(args.File, args.Property, value, "")
-	if err != nil {
-		log.Fatalf("Failed to set property in file: %s", err.Error())
-	}
-}
-
-func mapValue(args args, value string) string {
-	if len(args.Map) == 0 {
-		return value
-	}
-
-	for _, entry := range args.Map {
-		if entry.From == value {
-			return entry.To
+	if args.Bulk != "" {
+		err := setBulkProperties(args.File, args.Bulk, "")
+		if err != nil {
+			log.Fatalf("Failed to bulk-set properties in file: %s", err.Error())
 		}
-	}
-
-	return value
-}
-
-func isAllowed(args args, value string) bool {
-	if len(args.Allowed) == 0 {
-		return true
-	}
-
-	for _, v := range args.Allowed {
-		if value == v {
-			return true
+	} else if args.Property != "" && args.EnvVar != "" {
+		mappings := make(map[string]string)
+		for _, entry := range args.Map {
+			mappings[entry.From] = entry.To
 		}
+		err := setSingleProperty(args.File, args.Property, args.EnvVar, mappings, args.Allowed, "")
+		if err != nil {
+			log.Fatalf("Failed to set property in file: %s", err.Error())
+		}
+	} else {
+		fmt.Println("Need to pass single property definition or bulk file")
+		argsParser.WriteHelp(os.Stdout)
+		os.Exit(1)
 	}
-
-	return false
 }

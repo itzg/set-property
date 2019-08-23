@@ -67,8 +67,10 @@ func TestSetPropertyInFile_NewFile(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			err = setPropertyInFile(propFilename,
-				tt.Property, tt.Value, tmpdir)
+			varName := "TestSetPropertyInFile"
+			os.Setenv(varName, tt.Value)
+			err = setSingleProperty(propFilename,
+				tt.Property, varName, nil, nil, tmpdir)
 			require.NoError(t, err)
 
 			propFile, err := os.Open(propFilename)

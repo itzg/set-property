@@ -1,0 +1,16 @@
+{
+  "prop-simple": {
+    "env": "PROP_SIMPLE"
+  },
+  "prop-mapped": {
+    "env": "PROP_MAPPED",
+    "mappings": {
+      "one": "1",
+      "two": "2"
+    }
+  },
+  "prop-constrained": {
+    "env": "PROP_CONSTRAINED",
+    "allowed": ["one","two","three"]
+  }
+}
