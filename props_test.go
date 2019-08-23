@@ -11,20 +11,65 @@ import (
 )
 
 //noinspection GoUnhandledErrorResult
-func TestSetPropertyInFile_NewFile(t *testing.T) {
+func TestSetPropertyInFile(t *testing.T) {
 
 	var tests = []struct {
 		Name            string
 		ExistingContent string
 		Property        string
 		Value           string
+		Mappings        map[string]string
+		Allowed         []string
 		ExpectedContent string
+		ExpectError     bool
 	}{
 		{
 			Name:            "NewFile",
 			Property:        "prop1",
 			Value:           "value1",
 			ExpectedContent: "prop1=value1\n",
+		},
+		{
+			Name:            "ResolvesEmpty",
+			Property:        "prop1",
+			Value:           "",
+			ExpectedContent: "",
+		},
+		{
+			Name:            "Allowed",
+			Property:        "prop1",
+			Value:           "legal",
+			Allowed:         []string{"legal", "beagle"},
+			ExpectedContent: "prop1=legal\n",
+		},
+		{
+			Name:            "AllowedAfterMapping",
+			Property:        "prop1",
+			Value:           "dog",
+			Mappings:        map[string]string{"dog": "beagle"},
+			Allowed:         []string{"legal", "beagle"},
+			ExpectedContent: "prop1=beagle\n",
+		},
+		{
+			Name:        "NotAllowed",
+			Property:    "prop1",
+			Value:       "bogus",
+			Allowed:     []string{"legal", "beagle"},
+			ExpectError: true,
+		},
+		{
+			Name:            "Mapping",
+			Property:        "prop1",
+			Value:           "old",
+			Mappings:        map[string]string{"old": "new"},
+			ExpectedContent: "prop1=new\n",
+		},
+		{
+			Name:            "MissedMapping",
+			Property:        "prop1",
+			Value:           "other",
+			Mappings:        map[string]string{"old": "new"},
+			ExpectedContent: "prop1=other\n",
 		},
 		{
 			Name:            "ExistingNoChange",
@@ -67,11 +112,19 @@ func TestSetPropertyInFile_NewFile(t *testing.T) {
 				require.NoError(t, err)
 			}
 
+			// EXECUTE
+
 			varName := "TestSetPropertyInFile"
 			os.Setenv(varName, tt.Value)
 			err = setSingleProperty(propFilename,
-				tt.Property, varName, nil, nil, tmpdir)
-			require.NoError(t, err)
+				tt.Property, varName, tt.Mappings, tt.Allowed, tmpdir)
+			if !tt.ExpectError {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+
+			// VERIFY
 
 			propFile, err := os.Open(propFilename)
 			require.NoError(t, err)

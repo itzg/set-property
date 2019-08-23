@@ -93,9 +93,11 @@ func setPropertiesInFile(filename string, bulkConfig bulkConfig, tmpdir string) 
 		if err != nil {
 			return err
 		}
-		_, err = fmt.Fprintf(writer, "%s=%s\n", property, value)
-		if err != nil {
-			return errors.Wrap(err, "failed to write to temp file")
+		if value != "" {
+			_, err = fmt.Fprintf(writer, "%s=%s\n", property, value)
+			if err != nil {
+				return errors.Wrap(err, "failed to write to temp file")
+			}
 		}
 	}
 
