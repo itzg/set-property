@@ -30,6 +30,7 @@ scoop:
   bucket:
     owner: itzg
     name: scoop-bucket
+  folder: bucket
   license: MIT
   description: >
     Properties file manipulator that copies over a value from an
