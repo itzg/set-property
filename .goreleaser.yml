@@ -1,49 +1,28 @@
+project_name: set-property
 before:
   hooks:
     - go mod download
 builds:
-- env:
-  - CGO_ENABLED=0
-  goos:
-    - linux
-    - darwin
-    - windows
-  goarch:
-    - amd64
-    - arm
-    - arm64
-  goarm:
-    - 6
-    - 7
-archives:
-  # NOTE can't use `binary` format since scoop requires archive
-- format_overrides:
-    - goos: windows
-      format: zip
-dockers:
-  - image_templates:
-      - "itzg/set-property:latest"
-      - "itzg/set-property:{{.Tag}}"
-    goos: linux
-    goarch: amd64
-scoop:
-  bucket:
-    owner: itzg
-    name: scoop-bucket
-  folder: bucket
-  license: MIT
-  description: >
-    Properties file manipulator that copies over a value from an
-    environment variable optionally applying constraints and mappings
-checksum:
-  name_template: 'checksums.txt'
-snapshot:
-  name_template: "snapshot-{{ .ShortCommit }}"
+  - binary: set-property
+    env:
+      # to allow for alpine/musl use
+      - CGO_ENABLED=0
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - "6"
+      - "7"
+    ignore:
+      - goos: windows
+        goarch: arm64
 changelog:
-  sort: asc
   filters:
     exclude:
-    - '^docs:'
-    - '^test:'
-    - '^ci:'
-    - '^misc:'
+      - '^build:'
+      - '^ci:'
