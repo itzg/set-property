@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -34,7 +33,7 @@ func setPropertiesInFile(filename string, bulkConfig bulkConfig, tmpdir string) 
 	defer propsFile.Close()
 
 	// Setup a temp file for making changes as we go
-	tmpFile, err := ioutil.TempFile(tmpdir, "*.properties")
+	tmpFile, err := os.CreateTemp(tmpdir, "*.properties")
 	if err != nil {
 		return errors.Wrap(err, "unable to create temporary file for modifications")
 	}
