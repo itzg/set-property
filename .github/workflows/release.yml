@@ -10,6 +10,6 @@ jobs:
   release:
     uses: itzg/github-workflows/.github/workflows/go-with-releaser.yml@main
     with:
-      go-version: "1.23.6"
+      go-version: "1.24.2"
     secrets:
       scoop-tap-github-token: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
