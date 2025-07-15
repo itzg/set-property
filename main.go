@@ -1,11 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"github.com/alexflint/go-arg"
+	"github.com/itzg/go-flagsfiller"
 	"log"
 	"os"
-	"strings"
 )
 
 var (
@@ -14,44 +14,35 @@ var (
 	date    string
 )
 
-type keyValue struct {
-	From, To string
-}
-
-func (kv *keyValue) UnmarshalText(b []byte) error {
-	s := string(b)
-	parts := strings.SplitN(s, "=", 2)
-
-	if len(parts) != 2 {
-		return fmt.Errorf("missing = in %s", s)
-	}
-
-	kv.From = parts[0]
-	kv.To = parts[1]
-
-	return nil
-}
-
 type args struct {
-	File     string     `arg:"-f,required"`
-	Property string     `arg:"-p"`
-	EnvVar   string     `arg:"-e"`
-	Allowed  []string   `arg:"-a" help:"If specified, limits the values that can be passed from ENVVAR"`
-	Map      []keyValue `arg:"-m" help:"Defines mappings of a given value into property value to set. Syntax is from=to"`
-	Bulk     string     `help:"The name of a bulk definition JSON file"`
-}
+	Version bool `usage:"Print version information"`
 
-func (args) Version() string {
-	return fmt.Sprintf("set-property %s (%s @ %s)", version, commit, date)
-}
-
-func (args) Description() string {
-	return "Conditionally updates a given properties file when the given environment variable is set"
+	File     string            `aliases:"f" usage:"The properties [file] to update"`
+	Property string            `aliases:"p" usage:"The [name] of the property to set"`
+	EnvVar   string            `aliases:"e" usage:"The [name] of the environment variable to map from"`
+	Allowed  []string          `aliases:"a" usage:"If specified, limits the [values] that can be passed from ENVVAR"`
+	Mapping  map[string]string `aliases:"m" usage:"Defines mappings of a given value into property value to set. Syntax is [from=to]"`
+	Bulk     string            `usage:"The name of a bulk definition JSON [file]"`
 }
 
 func main() {
 	var args args
-	argsParser := arg.MustParse(&args)
+
+	err := flagsfiller.Parse(&args)
+	if err != nil {
+		log.Fatalf("Failed to parse flags: %s", err.Error())
+	}
+
+	if args.Version {
+		fmt.Printf("set-property %s (%s @ %s)", version, commit, date)
+		os.Exit(0)
+	}
+
+	if args.File == "" {
+		_, _ = fmt.Fprintf(os.Stderr, "Need to specify a properties file\n")
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	if args.Bulk != "" {
 		err := setBulkProperties(args.File, args.Bulk, "")
@@ -59,17 +50,13 @@ func main() {
 			log.Fatalf("Failed to bulk-set properties in file: %s", err.Error())
 		}
 	} else if args.Property != "" && args.EnvVar != "" {
-		mappings := make(map[string]string)
-		for _, entry := range args.Map {
-			mappings[entry.From] = entry.To
-		}
-		err := setSingleProperty(args.File, args.Property, args.EnvVar, mappings, args.Allowed, "")
+		err := setSingleProperty(args.File, args.Property, args.EnvVar, args.Mapping, args.Allowed, "")
 		if err != nil {
 			log.Fatalf("Failed to set property in file: %s", err.Error())
 		}
 	} else {
 		fmt.Println("Need to pass single property definition or bulk file")
-		argsParser.WriteHelp(os.Stdout)
+		flag.Usage()
 		os.Exit(1)
 	}
 }
