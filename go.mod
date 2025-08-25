@@ -5,7 +5,7 @@ go 1.23.6
 require (
 	github.com/itzg/go-flagsfiller v1.16.0
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 )
 
 require (
