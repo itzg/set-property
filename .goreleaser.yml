@@ -28,3 +28,5 @@ changelog:
     exclude:
       - '^build:'
       - '^ci:'
+release:
+  replace_existing_artifacts: true
