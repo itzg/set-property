@@ -3,7 +3,7 @@ module github.com/itzg/set-property
 go 1.26.3
 
 require (
-	github.com/itzg/go-flagsfiller v1.17.0
+	github.com/itzg/go-flagsfiller v1.18.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
 )
