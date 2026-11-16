@@ -4,16 +4,19 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"log"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type bulkEntry struct {
 	Env      string
+	Fallback *string
 	Mappings map[string]string
 	Allowed  []string
 }
@@ -32,7 +35,7 @@ func setPropertiesInFile(filename string, bulkConfig bulkConfig, tmpdir string) 
 	//noinspection GoUnhandledErrorResult
 	defer propsFile.Close()
 
-	// Setup a temp file for making changes as we go
+	// Set up a temp file for making changes as we go
 	tmpFile, err := os.CreateTemp(tmpdir, "*.properties")
 	if err != nil {
 		return errors.Wrap(err, "unable to create temporary file for modifications")
@@ -87,12 +90,17 @@ func setPropertiesInFile(filename string, bulkConfig bulkConfig, tmpdir string) 
 	}
 	// Process properties that weren't in existing file
 	for property, entry := range bulkConfig {
-		modified = true
 		value, err := resolveValue(property, entry)
 		if err != nil {
 			return err
 		}
-		if value != "" {
+		_, envSet := os.LookupEnv(entry.Env)
+		useFallback := !envSet && entry.Fallback != nil
+		if useFallback {
+			value = *entry.Fallback
+		}
+		if value != "" || useFallback {
+			modified = true
 			log.Printf("Setting %s to %s in %s\n", property, value, filename)
 			_, err = fmt.Fprintf(writer, "%s=%s\n", property, value)
 			if err != nil {
@@ -124,12 +132,12 @@ func resolveValue(property string, entry *bulkEntry) (string, error) {
 		}
 		if isAllowed(entry.Allowed, value) {
 			return value, nil
-		} else {
-			return "", errors.Errorf("Value '%s' for property %s is in allowed list: %v", value, property, entry.Allowed)
 		}
-	} else {
-		return "", nil
+
+		return "", errors.Errorf("Value '%s' for property %s is in allowed list: %v", value, property, entry.Allowed)
 	}
+
+	return "", nil
 }
 
 func copyOverTempFile(tmpFile *os.File, propsFile *os.File) error {
@@ -187,14 +195,8 @@ func setSingleProperty(filename string, property string, envVar string, mappings
 
 func isAllowed(allowed []string, value string) bool {
 	if allowed != nil && len(allowed) > 0 {
-		for _, v := range allowed {
-			if value == v {
-				return true
-			}
-		}
-
-		return false
-	} else {
-		return true
+		return slices.Contains(allowed, value)
 	}
+
+	return true
 }
