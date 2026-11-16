@@ -1,6 +1,6 @@
 module github.com/itzg/set-property
 
-go 1.26.3
+go 1.27.4
 
 require (
 	github.com/itzg/go-flagsfiller v1.19.0
